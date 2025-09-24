@@ -90,9 +90,45 @@ public class RAImpl implements RA {
 
     @Override
     public Relation rename(Relation rel, List<String> origAttr, List<String> renamedAttr) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'rename'");
-    }
+       if (rel == null) {
+            throw new IllegalArgumentException("rel can't be null");
+        } // if 
+        if (origAttr == null || renamedAttr == null) {
+            throw new IllegalArgumentException("Attribute lists can't be null");
+        } // if
+        if (origAttr.size() != renamedAttr.size()) {
+            throw new IllegalArgumentException("origAttr and renamedAttr must be same size");
+        } // if
+
+        List<String> newAttrNames = new ArrayList<>(rel.getAttrs());
+
+        for (int i = 0; i < origAttr.size(); i++) {
+            String from = origAttr.get(i);
+            String to = renamedAttr.get(i);
+
+            int idx = newAttrNames.indexOf(from);
+            if (idx < 0) {
+                throw new IllegalArgumentException("couldn't find attr to rename: " + from);
+            } // if
+            newAttrNames.set(idx, to);
+        } // for 
+
+        // duplicate handling 
+        Set<String> uniq = new HashSet<>(newAttrNames);
+        if (uniq.size() != newAttrNames.size()) {
+            throw new IllegalArgumentException("duplicate found so can't rename: " + newAttrNames);
+        } // if 
+
+        Relation renamed = new RelationBuilder()
+                .attributeNames(newAttrNames)
+                .attributeTypes(rel.getTypes())
+                .build();
+
+        for (int i = 0; i < rel.getSize(); i++) {
+            renamed.insert(rel.getRow(i));
+        } // for 
+        return renamed;
+    } // rename 
 
     @Override
     public Relation cartesianProduct(Relation rel1, Relation rel2) {
