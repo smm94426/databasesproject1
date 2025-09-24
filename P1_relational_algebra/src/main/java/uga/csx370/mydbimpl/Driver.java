@@ -6,27 +6,102 @@
  */
 package uga.csx370.mydbimpl;
 
-import java.util.List;
+import java.util.*;
 
-import uga.csx370.mydb.Relation;
-import uga.csx370.mydb.RelationBuilder;
-import uga.csx370.mydb.Type;
+import uga.csx370.mydb.*;
+import uga.csx370.mydbimpl.*;
 
 public class Driver {
 
     public static void main(String[] args) {
-        // Following is an example of how to use the relation class.
-        // This creates a table with three columns with below mentioned
-        // column names and data types.
-        // After creating the table, data is loaded from a CSV file.
-        // Path should be replaced with a correct file path for a compatible
-        // CSV file.
-        Relation rel1 = new RelationBuilder()
-                .attributeNames(List.of("Col01_Name", "Col02_Name", "Col03_Name"))
-                .attributeTypes(List.of(Type.INTEGER, Type.STRING, Type.DOUBLE))
-                .build();
-        rel1.loadData("/path/to/exported/csv_file");
-        rel1.print();
+
+
+        Relation studentRel = new RelationBuilder()
+            .attributeNames(List.of("ID", "name", "dept_name", "tot_cred"))
+            .attributeTypes(List.of(Type.INTEGER, Type.STRING, Type.STRING, Type.INTEGER))
+            .build();
+        studentRel.loadData("./mysql-files/student_export.csv");
+
+        Relation takesRel = new RelationBuilder()
+            .attributeNames(List.of("ID", "course_id", "sec_id", "semester", "year", "grade"))
+            .attributeTypes(List.of(Type.INTEGER, Type.INTEGER, Type.INTEGER, Type.STRING, Type.INTEGER, Type.STRING))
+            .build();
+        takesRel.loadData("./mysql-files/takes_export.csv");
+
+        Relation courseRel = new RelationBuilder()
+            .attributeNames(List.of("course_id", "title", "dept_name", "credits"))
+            .attributeTypes(List.of(Type.INTEGER, Type.STRING, Type.STRING, Type.INTEGER))
+            .build();
+        courseRel.loadData("./mysql-files/course_export.csv");
+
+        Relation advisorRel = new RelationBuilder()
+            .attributeNames(List.of("s_ID", "i_ID"))
+            .attributeTypes(List.of(Type.INTEGER, Type.INTEGER))
+            .build();
+        advisorRel.loadData("./mysql-files/advisor_export.csv");
+
+        RA ra = new RAImpl();
+
+        olinQuery(takesRel, courseRel, studentRel, ra);
+        
+        
+    }
+
+    public static void olinQuery(Relation takes, Relation course, Relation student, RA ra) {
+
+        /**
+         * Retrieve IDs and names of students who took an engineering class
+         * between 2003 and 2006, and earned an A or better.
+         */
+
+        Relation takes2003 = ra.select(takes,
+            new PredicateImpl(takes.getAttrIndex("year"), Cell.val(2003), PredicateImpl.Operator.GE));
+        Relation takesFiltered = ra.select(takes2003,
+            new PredicateImpl(takes2003.getAttrIndex("year"), Cell.val(2006), PredicateImpl.Operator.LE));
+
+        Relation renamedCourse = ra.rename(course, List.of("course_id"), List.of("course_id_course"));
+
+        int takesCourseIndex = takesFiltered.getAttrIndex("course_id");
+        int renamedIndex = renamedCourse.getAttrIndex("course_id_course") + takesFiltered.getAttrs().size();
+
+        Relation takesWithCourses = ra.join(
+            takesFiltered,
+            renamedCourse,
+            new PredicateImpl(
+                takesCourseIndex,
+                renamedIndex,
+                PredicateImpl.Operator.EQ
+            )
+        );
+
+        Relation engineeringCourses = ra.select(takesWithCourses,
+            new PredicateImpl(takesWithCourses.getAttrIndex("title"), Cell.val("Engineering"), PredicateImpl.Operator.CO));
+
+        Relation gradeA = ra.select(engineeringCourses,
+            new PredicateImpl(engineeringCourses.getAttrIndex("grade"), Cell.val("A "), PredicateImpl.Operator.EQ));
+
+        Relation gradeAPlus = ra.select(engineeringCourses,
+            new PredicateImpl(engineeringCourses.getAttrIndex("grade"), Cell.val("A+"), PredicateImpl.Operator.EQ));
+
+        Relation gradeFilter = ra.union(gradeA, gradeAPlus);
+
+        Relation studentIDs = ra.project(gradeFilter, List.of("ID"));
+
+        Relation renamedStudentRel = ra.rename(student, List.of("ID"), List.of("student_ID"));
+
+        int studentIdIdx = studentIDs.getAttrIndex("ID");
+        int renamedStudentIdIdx = renamedStudentRel.getAttrIndex("student_ID") + studentIDs.getAttrs().size();
+
+        Relation studentsWithNames = ra.join(
+            studentIDs,
+            renamedStudentRel,
+            new PredicateImpl(studentIdIdx, renamedStudentIdIdx, PredicateImpl.Operator.EQ)
+        );
+
+        Relation finalResult = ra.project(studentsWithNames, List.of("ID", "name"));
+
+        finalResult.print();  
+        
     }
 
 }
