@@ -1,10 +1,16 @@
 package uga.csx370.mydbimpl;
 
 import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 import uga.csx370.mydb.Predicate;
 import uga.csx370.mydb.RA;
 import uga.csx370.mydb.Relation;
+import uga.csx370.mydb.RelationBuilder;
+import uga.csx370.mydb.Type;
+import uga.csx370.mydb.Cell;
 
 public class RAImpl implements RA {
 
