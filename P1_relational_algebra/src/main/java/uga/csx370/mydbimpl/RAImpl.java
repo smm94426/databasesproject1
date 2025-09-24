@@ -45,8 +45,63 @@ public class RAImpl implements RA {
 
     @Override
     public Relation union(Relation rel1, Relation rel2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'union'");
+        // Check for null relations
+        if (rel1 == null || rel2 == null) {
+            throw new IllegalArgumentException("Relations cannot be null");
+        }
+        
+        // Check compatibility - same attributes and types
+        if (!rel1.getAttrs().equals(rel2.getAttrs()) || !rel1.getTypes().equals(rel2.getTypes())) {
+            throw new IllegalArgumentException("Relations are not compatible");
+        }
+        
+        // Create result relation with same schema as input relations
+        Relation result = new RelationBuilder()
+                .attributeNames(rel1.getAttrs())
+                .attributeTypes(rel1.getTypes())
+                .build();
+        
+        // Add all rows from rel1
+        for (int i = 0; i < rel1.getSize(); i++) {
+            result.insert(rel1.getRow(i));
+        }
+        
+        // Add rows from rel2 that are not already in result (avoid duplicates)
+        for (int i = 0; i < rel2.getSize(); i++) {
+            List<Cell> row = rel2.getRow(i);
+            if (!containsRow(result, row)) {
+                result.insert(row);
+            }
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Helper method to check if a relation contains a specific row
+     */
+    private boolean containsRow(Relation rel, List<Cell> row) {
+        for (int i = 0; i < rel.getSize(); i++) {
+            if (rowsEqual(rel.getRow(i), row)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Helper method to check if two rows are equal
+     */
+    private boolean rowsEqual(List<Cell> row1, List<Cell> row2) {
+        if (row1.size() != row2.size()) {
+            return false;
+        }
+        for (int i = 0; i < row1.size(); i++) {
+            if (!row1.get(i).equals(row2.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
