@@ -56,9 +56,9 @@ public class Driver {
 
         olinQuery(takesRel, courseRel, studentRel, ra);
         shafatQuery(takesRel, courseRel, instructorRel, teachesRel, ra);
+        meghanaQuery(instructorRel, teachesRel, ra);
         
-        
-    }
+    } // main 
 
     public static void olinQuery(Relation takes, Relation course, Relation student, RA ra) {
 
@@ -182,17 +182,23 @@ public class Driver {
         
     }
 
+    /**
+     * Retrieve names and IDs of instructors who taught a course
+     * in Fall OR in 2004.
+     */
     public static void meghanaQuery(Relation instructor, Relation teaches, RA ra) {
         // Fall
         Relation teachesFall = ra.select(
             teaches,
             new PredicateImpl(teaches.getAttrIndex("semester"), Cell.val("Fall"), PredicateImpl.Operator.EQ)
          );
+        
         // 2004
         Relation teaches2004 = ra.select(
         teaches,
         new PredicateImpl(teaches.getAttrIndex("year"), Cell.val(2004), PredicateImpl.Operator.EQ)
         );
+        
         // Fall OR year=2004
         Relation teachesFiltered = ra.union(teachesFall, teaches2004);
         // instructor joined with teachesfiltered
@@ -204,6 +210,7 @@ public class Driver {
             teachesFiltered,
             new PredicateImpl(instrIdIndex, teachIdIndex, PredicateImpl.Operator.EQ)
         );
+        
         // id and name from instructor
         Relation idName = ra.project(joined, List.of("ID", "name"));
         idName.print();
