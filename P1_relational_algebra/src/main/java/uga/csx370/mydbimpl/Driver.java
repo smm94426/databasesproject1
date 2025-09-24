@@ -56,9 +56,11 @@ public class Driver {
 
         olinQuery(takesRel, courseRel, studentRel, ra);
         shafatQuery(takesRel, courseRel, instructorRel, teachesRel, ra);
+        meghanaQuery(instructorRel, teachesRel, ra);
         seanQuery(studentRel, advisorRel, teachesRel, takesRel, instructorRel, ra);
         
-    }
+    } // main
+
 
     public static void olinQuery(Relation takes, Relation course, Relation student, RA ra) {
 
@@ -210,11 +212,52 @@ public class Driver {
         // Project student ID, student name, advisor name
         Relation result = ra.project(withAdvisor, List.of("s_ID", "name", "advisor_name"));
 
-        System.out.println("\n=== Students Taught by their own advisors (2007–2010) ===");
+        System.out.println("Sean's Query\n=== Students Taught by their own advisors (2007–2010) ===");
         result.print();
     }
 
 
 
 
+    /**
+     * Retrieve names and IDs of instructors who taught a course
+     * in Fall OR in 2004.
+     */
+    public static void meghanaQuery(Relation instructor, Relation teaches, RA ra) {
+        // Fall
+// Fall
+        Relation teachesFall = ra.select(
+                teaches,
+                new PredicateImpl(teaches.getAttrIndex("semester"), Cell.val("Fall"), PredicateImpl.Operator.EQ)
+        );
+
+        // 2004
+        Relation teaches2004 = ra.select(
+                teaches,
+                new PredicateImpl(teaches.getAttrIndex("year"), Cell.val(2004), PredicateImpl.Operator.EQ)
+        );
+
+        // Fall OR year=2004
+        Relation teachesFiltered = ra.union(teachesFall, teaches2004);
+
+        // 🔧 Rename teachesFiltered.ID to avoid duplicate "ID" when joining
+        Relation teachesRenamed = ra.rename(teachesFiltered,
+                List.of("ID"),
+                List.of("instructor_ID")
+        );
+
+        // Join instructor.ID = teachesRenamed.instructor_ID
+        int instrIdIndex = instructor.getAttrIndex("ID");
+        int teachInstrIdIndex = teachesRenamed.getAttrIndex("instructor_ID") + instructor.getAttrs().size();
+
+        Relation joined = ra.join(
+                instructor,
+                teachesRenamed,
+                new PredicateImpl(instrIdIndex, teachInstrIdIndex, PredicateImpl.Operator.EQ)
+        );
+
+        // Project id and name from instructor
+        Relation idName = ra.project(joined, List.of("ID", "name"));
+        idName.print();
+    } //meghanaQuery
 }
