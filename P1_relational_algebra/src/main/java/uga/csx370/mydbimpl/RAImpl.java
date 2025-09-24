@@ -51,6 +51,9 @@ public class RAImpl implements RA {
 
     @Override
     public Relation diff(Relation rel1, Relation rel2) {
+        if (!rel1.getAttrs().equals(rel2.getAttrs()) || !rel1.getTypes().equals(rel2.getTypes())) {
+            throw new IllegalArgumentException("Relations are not compatible");
+        }
         //make new relation with same schema as rel1
         Relation retrel = new RelationBuilder()
             .attributeNames(rel1.getAttrs())
