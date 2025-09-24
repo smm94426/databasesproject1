@@ -334,7 +334,7 @@ public class RAImpl implements RA {
         
         for (String attr : rel1.getAttrs()) {
             if (rel2.hasAttr(attr)) {
-                throw new IllegalArgumentException("Relations have common attributes: " + attr);
+               throw new IllegalArgumentException("Relations have common attributes: " + attr);
             }
         }
 
