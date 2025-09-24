@@ -1,6 +1,6 @@
 Group Number: 22
 
-Team Members: Olin Cordell, Meghana Madduri 
+Team Members: Olin Cordell, Meghana Madduri, Shafat Hasan 
 
 Group Member Contributions:
 
@@ -15,7 +15,7 @@ Meghana Madduri -> Query Contribution: "Retrieve names and IDs of instructors
                                         
                    Methods Implemented: Select, Rename 
 
-Shafat Hasan -> Query Contributed: "Retrieve IDs and names of instructors earning more 
-                                    than their department's average"
+Shafat Hasan -> Query Contributed: "Find courses that have been taken by more than 50       
+                    students, along with the instructor who teaches them and their salary information."
                                                     
                   Methods Implemented: Union
