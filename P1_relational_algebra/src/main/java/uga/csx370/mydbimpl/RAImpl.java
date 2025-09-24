@@ -132,8 +132,36 @@ public class RAImpl implements RA {
 
     @Override
     public Relation cartesianProduct(Relation rel1, Relation rel2) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'cartesianProduct'");
+        
+        for (String attr : rel1.getAttrs()) {
+            if (rel2.hasAttr(attr)) {
+                throw new IllegalArgumentException("Relations have common attributes: " + attr);
+            }
+        }
+
+        List<String> newAttrs = new ArrayList<>(rel1.getAttrs());
+        newAttrs.addAll(rel2.getAttrs());
+
+        List<Type> newTypes = new ArrayList<>(rel1.getTypes());
+        newTypes.addAll(rel2.getTypes());
+
+        Relation result = new RelationBuilder()
+            .attributeNames(newAttrs)
+            .attributeTypes(newTypes)
+            .build();
+
+        for (int i = 0; i < rel1.getSize(); i++) {
+            List<Cell> row1 = rel1.getRow(i);
+            for (int j = 0; j < rel2.getSize(); j++) {
+                List<Cell> row2 = rel2.getRow(j);
+
+                List<Cell> combined = new ArrayList<>(row1);
+                combined.addAll(row2);
+
+                result.insert(combined);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -144,8 +172,38 @@ public class RAImpl implements RA {
 
     @Override
     public Relation join(Relation rel1, Relation rel2, Predicate p) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'join'");
+        
+        for (String attr : rel1.getAttrs()) {
+            if (rel2.hasAttr(attr)) {
+                throw new IllegalArgumentException("Relations have common attributes: " + attr);
+            }
+        }
+
+        List<String> newAttrs = new ArrayList<>(rel1.getAttrs());
+        newAttrs.addAll(rel2.getAttrs());
+
+        List<Type> newTypes = new ArrayList<>(rel1.getTypes());
+        newTypes.addAll(rel2.getTypes());
+
+        Relation result = new RelationBuilder()
+                     .attributeNames(newAttrs)
+                     .attributeTypes(newTypes)
+                     .build();
+
+        for (int i = 0; i < rel1.getSize(); i++) {
+            List<Cell> row1 = rel1.getRow(i);
+            for (int j = 0; j < rel2.getSize(); j++) {
+                List<Cell> row2 = rel2.getRow(j);
+
+                List<Cell> combined = new ArrayList<>(row1);
+                combined.addAll(row2);
+
+                if (p.check(combined)) {
+                    result.insert(combined);
+                }
+            }
+        }
+        return result;
     }
 
 }
