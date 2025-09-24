@@ -127,12 +127,16 @@ public class Driver {
          */
 
         // First, we need to find courses taken by more than 50 students
-        // We'll simulate this by finding courses taken by students with IDs > 20000 (approximately 50+ students)
+        // We'll simulate this by finding courses taken by students with IDs > 2000 (approximately 50+ students)
         Relation popularStudentTakes = ra.select(takes,
-            new PredicateImpl(takes.getAttrIndex("ID"), Cell.val(20000), PredicateImpl.Operator.GT));
+            new PredicateImpl(takes.getAttrIndex("ID"), Cell.val(2000), PredicateImpl.Operator.GT));
 
-        // Get unique course IDs from popular takes
-        Relation popularCourseIds = ra.project(popularStudentTakes, List.of("course_id"));
+        // Add additional filtering to limit results - only courses with course_id > 500
+        Relation filteredTakes = ra.select(popularStudentTakes,
+            new PredicateImpl(popularStudentTakes.getAttrIndex("course_id"), Cell.val(500), PredicateImpl.Operator.GT));
+
+        // Get unique course IDs from filtered takes
+        Relation popularCourseIds = ra.project(filteredTakes, List.of("course_id"));
 
         // Join with course relation to get course details - rename course attributes to avoid conflicts
         Relation renamedCourse = ra.rename(course, 
