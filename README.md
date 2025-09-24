@@ -11,6 +11,6 @@ Olin Cordell -> Query Contributed: "Retrieve IDs and names of students
                   Methods Implemented: Theta Join, Cartesian Product
 
 Meghana Madduri -> Query Contribution: "Retrieve names and IDs of the first 50 intructors 
-                                        who taught a course in Fall 2025"
+                                        who taught a course in Fall 2004"
                                         
                    Methods Implemented: Select, Rename 
