@@ -182,4 +182,30 @@ public class Driver {
         
     }
 
+    public static void meghanaQuery(Relation instructor, Relation teaches, RA ra) {
+        // Fall
+        Relation teachesFall = ra.select(
+            teaches,
+            new PredicateImpl(teaches.getAttrIndex("semester"), Cell.val("Fall"), PredicateImpl.Operator.EQ)
+         );
+        // 2004
+        Relation teaches2004 = ra.select(
+        teaches,
+        new PredicateImpl(teaches.getAttrIndex("year"), Cell.val(2004), PredicateImpl.Operator.EQ)
+        );
+        // Fall OR year=2004
+        Relation teachesFiltered = ra.union(teachesFall, teaches2004);
+        // instructor joined with teachesfiltered
+        int instrIdIndex = instructor.getAttrIndex("ID");
+        int teachIdIndex = teachesFiltered.getAttrIndex("ID") + instructor.getAttrs().size();
+
+        Relation joined = ra.join(
+            instructor,
+            teachesFiltered,
+            new PredicateImpl(instrIdIndex, teachIdIndex, PredicateImpl.Operator.EQ)
+        );
+        // id and name from instructor
+        Relation idName = ra.project(joined, List.of("ID", "name"));
+        idName.print();
+    } //meghanaQuery
 }
