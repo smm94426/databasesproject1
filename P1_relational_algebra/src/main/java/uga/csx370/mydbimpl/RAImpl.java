@@ -10,9 +10,26 @@ public class RAImpl implements RA {
 
     @Override
     public Relation select(Relation rel, Predicate p) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'select'");
-    }
+        if (rel == null) {
+            throw new IllegalArgumentException("rel can't be null");
+        } // if 
+        if (p == null) {
+            throw new IllegalArgumentException("predicate can't be null");
+        } // if 
+        
+         Relation result = new RelationBuilder()
+                .attributeNames(rel.getAttrs())
+                .attributeTypes(rel.getTypes())
+                .build();
+
+        for (int i = 0; i < rel.getSize(); i++) {
+            List<Cell> row = rel.getRow(i);
+            if (p.check(row)) {
+                result.insert(row);
+            } // if
+        } // for
+        return result;
+    } // select
 
     @Override
     public Relation project(Relation rel, List<String> attrs) {
