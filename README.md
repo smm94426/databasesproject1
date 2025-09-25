@@ -27,3 +27,8 @@ Pushya Damania -> Query Contribution: "Retrieve the IDs and names of students(wi
                                         
                    Methods Implemented: Diff, Intersect
 
+Sean McGrath -> Query Contributed: "Retrieve Students who have a course taught by their advisor during 2007-2010"
+
+                  Methods Implemented: Project, Natural Join
+
+
