@@ -1,6 +1,6 @@
 Group Number: 22
 
-Team Members: Olin Cordell, Meghana Madduri, Shafat Hasan, Pushya Damania
+Team Members: Olin Cordell, Meghana Madduri, Shafat Hasan, Pushya Damania, Sean McGrath
 
 Group Member Contributions:
 
