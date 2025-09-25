@@ -20,3 +20,10 @@ Shafat Hasan -> Query Contributed: "Find courses that have been taken by more th
                     students, along with the instructor who teaches them and their salary information."
                                                     
                   Methods Implemented: Union
+
+Pushya Damania -> Query Contribution: "Retrieve the IDs and names of students(with at least 128 credits)who, after 2005, 
+                    have taken at least two courses from different departments. 
+                    These courses must have been taught by the same instructor"
+                                        
+                   Methods Implemented: Diff, Intersect
+
