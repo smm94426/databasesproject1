@@ -350,14 +350,12 @@ public class Driver {
                                 List.of("ID_b", "t_ID_b", "course_dept_b"));
 
         Relation multiDeptPairs = ra.join(t4_a, t4_b, new Predicate() {
-            @Override
             public boolean check(List<Cell> row) {
                 int offset = t4_a.getAttrs().size();
                 return row.get(t4_a.getAttrIndex("ID_a")).equals(row.get(offset + t4_b.getAttrIndex("ID_b")))
                         && row.get(t4_a.getAttrIndex("t_ID_a")).equals(row.get(offset + t4_b.getAttrIndex("t_ID_b")))
                         && !row.get(t4_a.getAttrIndex("course_dept_a")).equals(row.get(offset + t4_b.getAttrIndex("course_dept_b")));
             }
-            @Override
             public boolean evaluate(List<Cell> row, List<String> attrs) {
                 return check(row);
             }
