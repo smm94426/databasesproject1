@@ -56,7 +56,7 @@ public class Driver {
 
         olinQuery(takesRel, courseRel, studentRel, ra);
         shafatQuery(takesRel, courseRel, instructorRel, teachesRel, ra);
-        meghanaQuery(instructorRel, teachesRel, ra);
+        meghanaQuery(instructorRel, teachesRel, courseRel, ra);
         seanQuery(studentRel, advisorRel, teachesRel, takesRel, instructorRel, ra);
         PushyaQuery(studentRel, takesRel, courseRel, instructorRel, teachesRel, ra);
         
@@ -223,48 +223,73 @@ public class Driver {
 
 
 
-
-    /**
+     /**
      * Retrieve names and IDs of instructors who taught a course
-     * in Fall OR in 2004.
+     * in Fall OR in 2004 AND course credit >= 4
      */
-    public static void meghanaQuery(Relation instructor, Relation teaches, RA ra) {
-        // Fall
-// Fall
+    public static void meghanaQuery(Relation instructor, Relation teaches, Relation course, RA ra) {
+        // teaches fall
         Relation teachesFall = ra.select(
-                teaches,
-                new PredicateImpl(teaches.getAttrIndex("semester"), Cell.val("Fall"), PredicateImpl.Operator.EQ)
+            teaches,
+            new PredicateImpl(teaches.getAttrIndex("semester"), Cell.val("Fall"), PredicateImpl.Operator.EQ)
         );
-
-        // 2004
+    
+        // teaches 2004
         Relation teaches2004 = ra.select(
-                teaches,
-                new PredicateImpl(teaches.getAttrIndex("year"), Cell.val(2004), PredicateImpl.Operator.EQ)
+            teaches,
+            new PredicateImpl(teaches.getAttrIndex("year"), Cell.val(2004), PredicateImpl.Operator.EQ)
         );
-
-        // Fall OR year=2004
+    
+        // fall or 2004
         Relation teachesFiltered = ra.union(teachesFall, teaches2004);
-
-        // 🔧 Rename teachesFiltered.ID to avoid duplicate "ID" when joining
-        Relation teachesRenamed = ra.rename(teachesFiltered,
-                List.of("ID"),
-                List.of("instructor_ID")
+    
+        // same names before theta joins so:
+        // rename teaches.ID to t_ID
+        Relation teachesRen = ra.rename(
+            teachesFiltered,
+            List.of("ID"),
+            List.of("t_ID")
         );
-
-        // Join instructor.ID = teachesRenamed.instructor_ID
-        int instrIdIndex = instructor.getAttrIndex("ID");
-        int teachInstrIdIndex = teachesRenamed.getAttrIndex("instructor_ID") + instructor.getAttrs().size();
-
+    
+        // course.course_id = course_id_course 
+        // course.dept_name = c_dept_name
+        Relation courseRen = ra.rename(
+            course,
+            List.of("course_id", "dept_name"),
+            List.of("course_id_course", "c_dept_name")
+        );
+    
+        // teachesRen JOIN courseRen on teaches.course_id = course.course_id_course
+        int t_courseIdIdx = teachesRen.getAttrIndex("course_id");                      
+        int c_courseIdIdx = teachesRen.getAttrs().size() + courseRen.getAttrIndex("course_id_course"); 
+        Relation tWithC = ra.join(
+            teachesRen,
+            courseRen,
+            new PredicateImpl(t_courseIdIdx, c_courseIdIdx, PredicateImpl.Operator.EQ)
+        );
+    
+        // credits >= 4 
+        int creditsIdx = teachesRen.getAttrs().size() + courseRen.getAttrIndex("credits");
+        Relation fourPlusCredits = ra.select(
+            tWithC,
+            new PredicateImpl(creditsIdx, Cell.val(4), PredicateImpl.Operator.GE)
+        );
+    
+        //  instructor JOIN fourPlusCredits on instructor.ID = teaches.t_ID since theta join 
+        int instrIdIdx = instructor.getAttrIndex("ID");                     // left index
+        int t_idIdx    = instructor.getAttrs().size() + fourPlusCredits.getAttrIndex("t_ID"); 
         Relation joined = ra.join(
-                instructor,
-                teachesRenamed,
-                new PredicateImpl(instrIdIndex, teachInstrIdIndex, PredicateImpl.Operator.EQ)
+            instructor,
+            fourPlusCredits,
+            new PredicateImpl(instrIdIdx, t_idIdx, PredicateImpl.Operator.EQ)
         );
-
-        // Project id and name from instructor
-        Relation idName = ra.project(joined, List.of("ID", "name"));
-        idName.print();
-    } //meghanaQuery
+    
+        // Project only ID, name from the instructor side
+        Relation result = ra.project(joined, List.of("ID", "name"));
+    
+        System.out.println("\n=== Instructors who taught (Fall OR 2004) AND course credits >= 4 ===");
+        result.print();
+    } // meghanaQuery
 
     public static void PushyaQuery(Relation studentRel, Relation takesRel, Relation courseRel,
                              Relation instructorRel, Relation teachesRel, RA ra) {
