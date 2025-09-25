@@ -297,19 +297,9 @@ public class Driver {
         System.out.println("\n=== Pushya's Query ===");
         System.out.println("\n=== note, slow ===");    
 
-        //Written before predicateImpl.java so it has to override manually, no time to change
-        
         //Select students who took courses after 2005
-        Relation takesAfter2005 = ra.select(takesRel, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                return row.get(takesRel.getAttrIndex("year")).getAsInt() > 2005;
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+        Relation takesAfter2005 = ra.select(takesRel,
+            new PredicateImpl(takesRel.getAttrIndex("year"), Cell.val(2005), PredicateImpl.Operator.GT));
 
         //Keep student ID + course ID
         Relation t1 = ra.project(takesAfter2005, List.of("ID", "course_id"));
@@ -318,55 +308,37 @@ public class Driver {
         Relation teachesRenamed = ra.rename(teachesRel, List.of("ID"), List.of("t_ID"));
         Relation instrRenamed = ra.rename(instructorRel, List.of("ID"), List.of("i_ID"));
 
-        Relation teachesInstr = ra.join(teachesRenamed, instrRenamed, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                int offset = teachesRenamed.getAttrs().size();
-                return row.get(teachesRenamed.getAttrIndex("t_ID"))
-                        .equals(row.get(offset + instrRenamed.getAttrIndex("i_ID")));
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+        int teachesIdIdx = teachesRenamed.getAttrIndex("t_ID");
+        int instrIdIdx = instrRenamed.getAttrIndex("i_ID") + teachesRenamed.getAttrs().size();
+
+        Relation teachesInstr = ra.join(teachesRenamed, instrRenamed,
+            new PredicateImpl(teachesIdIdx, instrIdIdx, PredicateImpl.Operator.EQ));
 
         Relation t2 = ra.project(teachesInstr, List.of("course_id", "t_ID"));
         Relation t2Renamed = ra.rename(t2, List.of("course_id"), List.of("course_id_t2"));
 
-        //Join w students
-        Relation t3 = ra.join(t1, t2Renamed, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                int offset = t1.getAttrs().size();
-                return row.get(t1.getAttrIndex("course_id"))
-                        .equals(row.get(offset + t2Renamed.getAttrIndex("course_id_t2")));
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+        //Join with stu courses
+        int t1CourseIdx = t1.getAttrIndex("course_id");
+        int t2CourseIdx = t2Renamed.getAttrIndex("course_id_t2") + t1.getAttrs().size();
+
+        Relation t3 = ra.join(t1, t2Renamed,
+            new PredicateImpl(t1CourseIdx, t2CourseIdx, PredicateImpl.Operator.EQ));
+
         Relation t3Proj = ra.project(t3, List.of("ID", "course_id", "t_ID"));
 
         //Join w course info
         Relation courseRenamed = ra.rename(courseRel, List.of("dept_name", "course_id"),
                                         List.of("course_dept", "course_id_course"));
-        Relation t4 = ra.join(t3Proj, courseRenamed, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                int offset = t3Proj.getAttrs().size();
-                return row.get(t3Proj.getAttrIndex("course_id"))
-                        .equals(row.get(offset + courseRenamed.getAttrIndex("course_id_course")));
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+
+        int t3CourseIdx = t3Proj.getAttrIndex("course_id");
+        int courseIdx = courseRenamed.getAttrIndex("course_id_course") + t3Proj.getAttrs().size();
+
+        Relation t4 = ra.join(t3Proj, courseRenamed,
+            new PredicateImpl(t3CourseIdx, courseIdx, PredicateImpl.Operator.EQ));
+
         Relation t4Proj = ra.project(t4, List.of("ID", "t_ID", "course_dept"));
 
-        //Self join for multi-department instr
+        //Self-join 4 multi-department inst
         Relation t4_a = ra.rename(t4Proj, List.of("ID", "t_ID", "course_dept"),
                                 List.of("ID_a", "t_ID_a", "course_dept_a"));
         Relation t4_b = ra.rename(t4Proj, List.of("ID", "t_ID", "course_dept"),
@@ -390,54 +362,51 @@ public class Driver {
         Relation distinctQualified = ra.union(qualifiedPairs, qualifiedPairs);
         Relation sIDs = ra.rename(distinctQualified, List.of("ID_a", "t_ID_a"), List.of("ID", "t_ID"));
 
-        //Join w stu 4 names
+        //Join w stu names
         Relation studentRenamed = ra.rename(studentRel, List.of("ID"), List.of("ID_stu"));
-        Relation result = ra.join(sIDs, studentRenamed, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                int offset = sIDs.getAttrs().size();
-                return row.get(sIDs.getAttrIndex("ID"))
-                        .equals(row.get(offset + studentRenamed.getAttrIndex("ID_stu")));
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+
+        int sIdIdx = sIDs.getAttrIndex("ID");
+        int stuIdIdx = studentRenamed.getAttrIndex("ID_stu") + sIDs.getAttrs().size();
+
+        Relation result = ra.join(sIDs, studentRenamed,
+            new PredicateImpl(sIdIdx, stuIdIdx, PredicateImpl.Operator.EQ));
 
         Relation finalResult = ra.project(result, List.of("ID", "name"));
 
         //Filter high-credit students
         int threshold = 128;
-        Relation highCredStudents = ra.select(studentRel, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                return row.get(studentRel.getAttrIndex("tot_cred")).getAsInt() >= threshold;
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+        Relation highCredStudents = ra.select(studentRel,
+            new PredicateImpl(studentRel.getAttrIndex("tot_cred"), Cell.val(threshold), PredicateImpl.Operator.GE));
 
         Relation highCredSIDsRenamed = ra.rename(ra.project(highCredStudents, List.of("ID")),
                                                 List.of("ID"), List.of("ID_hc"));
 
-        Relation filteredFinal = ra.join(finalResult, highCredSIDsRenamed, new Predicate() {
-            @Override
-            public boolean check(List<Cell> row) {
-                int offset = finalResult.getAttrs().size();
-                return row.get(finalResult.getAttrIndex("ID"))
-                        .equals(row.get(offset + highCredSIDsRenamed.getAttrIndex("ID_hc")));
-            }
-            @Override
-            public boolean evaluate(List<Cell> row, List<String> attrs) {
-                return check(row);
-            }
-        });
+        int finalIdIdx = finalResult.getAttrIndex("ID");
+        int hcIdIdx = highCredSIDsRenamed.getAttrIndex("ID_hc") + finalResult.getAttrs().size();
+
+        Relation filteredFinal = ra.join(finalResult, highCredSIDsRenamed,
+            new PredicateImpl(finalIdIdx, hcIdIdx, PredicateImpl.Operator.EQ));
 
         filteredFinal = ra.project(filteredFinal, List.of("ID", "name"));
         System.out.println("Pushya Query " + filteredFinal.getSize());
         filteredFinal.print();
-    }// Pushya query
+        //Final output if too slow
+        //Pushya Query 12
+        //+-------+-----------+
+        //| ID    | name      |
+        //+-------+-----------+
+        //| 10527 | Kieras    |
+        //| 14581 | Vagn      |
+        //| 23525 | DAgostino |
+        //| 51923 | Peterson  |
+        //| 61354 | Barranco  |
+        //| 65205 | Sauer     |
+        //| 69122 | Epstein   |
+        //| 71025 | Cadis     |
+        //| 82301 | Conti     |
+        //| 93004 | Gibbs     |
+        //| 97551 | Labaye    |
+        //| 99660 | OMalley   |
+        //+-------+-----------+
+    } // PushyaQuery
 }
