@@ -190,9 +190,9 @@ public class Driver {
     }
     public static void seanQuery(Relation student, Relation advisor, Relation teaches, Relation takes, Relation instructor, RA ra) {
         // Rename
-        Relation studentS = ra.rename(student,  List.of("ID"), List.of("s_ID"));
-        Relation teachesI = ra.rename(teaches,  List.of("ID"), List.of("i_ID"));
-        Relation takesS   = ra.rename(takes,    List.of("ID"), List.of("s_ID"));
+        Relation studentS = ra.rename(student, List.of("ID"), List.of("s_ID"));
+        Relation teachesI = ra.rename(teaches, List.of("ID"), List.of("i_ID"));
+        Relation takesS = ra.rename(takes, List.of("ID"), List.of("s_ID"));
 
         // Select years 2007–2010 (inclusive)
         Relation takesFiltered = ra.select(
@@ -204,20 +204,20 @@ public class Driver {
                 new PredicateImpl(takesFiltered.getAttrIndex("year"), Cell.val(2010), PredicateImpl.Operator.LE)
         );
 
-        Relation sJoinA       = ra.join(studentS, advisor);
-        Relation sJoinATeach  = ra.join(sJoinA,   teachesI);
+        Relation sJoinA = ra.join(studentS, advisor);
+        Relation sJoinATeach = ra.join(sJoinA,   teachesI);
 
         // Join filtered takes
         Relation fullJoin = ra.join(sJoinATeach, takesFiltered);
 
         // Bring in instructor for advisor_name
         Relation instrRenamed = ra.rename(instructor, List.of("ID", "name"), List.of("i_ID", "advisor_name"));
-        Relation withAdvisor  = ra.join(fullJoin, instrRenamed);
+        Relation withAdvisor = ra.join(fullJoin, instrRenamed);
 
         // Project student ID, student name, advisor name
         Relation result = ra.project(withAdvisor, List.of("s_ID", "name", "advisor_name"));
 
-        System.out.println("Sean's Query\n=== Students Taught by their own advisors (2007–2010) ===");
+        System.out.println("Sean's Query\n=== Students who took a course taught by their own advisors in 2007-2010 ===");
         result.print();
     }
 
