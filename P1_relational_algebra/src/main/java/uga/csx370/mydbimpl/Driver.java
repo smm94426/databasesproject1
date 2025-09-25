@@ -291,6 +291,11 @@ public class Driver {
         result.print();
     } // meghanaQuery
 
+     /**
+     * Retrieve the IDs and names of students (with at least 128 credits)
+     * who, after 2005, have taken at least two courses from different
+     * departments. These courses must have been taught by the same instructor.
+     */
     public static void PushyaQuery(Relation studentRel, Relation takesRel, Relation courseRel,
                              Relation instructorRel, Relation teachesRel, RA ra) {
 
