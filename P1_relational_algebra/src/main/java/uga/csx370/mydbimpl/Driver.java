@@ -284,7 +284,7 @@ public class Driver {
             new PredicateImpl(instrIdIdx, t_idIdx, PredicateImpl.Operator.EQ)
         );
     
-        // Project only ID, name from the instructor side
+        // id, name from the instructor projected 
         Relation result = ra.project(joined, List.of("ID", "name"));
     
         System.out.println("\n=== Instructors who taught (Fall OR 2004) AND course credits >= 4 ===");
